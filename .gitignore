@@ -6,3 +6,4 @@ dist/
 build/
 *.egg
 .pytest_cache/
+node_modules/
