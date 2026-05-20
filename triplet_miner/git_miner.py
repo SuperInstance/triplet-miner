@@ -17,6 +17,23 @@ from triplet_miner.filters import QualityFilter
 from triplet_miner.exporters import export_json, export_csv, export_triplets
 
 
+# ─── Strategy resolution ───────────────────────────────────────────
+
+def _resolve_strategy(strategy) -> MiningStrategy:
+    """Accept MiningStrategy enum or string name."""
+    if isinstance(strategy, MiningStrategy):
+        return strategy
+    if isinstance(strategy, str):
+        try:
+            return MiningStrategy(strategy.lower())
+        except ValueError:
+            raise ValueError(
+                f"Unknown strategy {strategy!r}. "
+                f"Choose from: {', '.join(s.value for s in MiningStrategy)}"
+            )
+    raise TypeError(f"strategy must be MiningStrategy or str, got {type(strategy).__name__}")
+
+
 # ─── Git commit data ───────────────────────────────────────────────
 
 def _parse_git_log(repo_path: str, max_commits: int = 500) -> List[Dict[str, Any]]:
@@ -149,9 +166,16 @@ class TripletMiner:
         max_commits: int = 500,
         negatives_per_anchor: int = 1,
     ):
-        self.default_strategy = default_strategy
+        self.default_strategy = _resolve_strategy(default_strategy)
         self.max_commits = max_commits
         self.negatives_per_anchor = negatives_per_anchor
+
+    def __repr__(self) -> str:
+        return (
+            f"TripletMiner(strategy={self.default_strategy.value}, "
+            f"max_commits={self.max_commits}, "
+            f"negatives_per_anchor={self.negatives_per_anchor})"
+        )
 
     def mine_from_repo(
         self,
@@ -169,7 +193,7 @@ class TripletMiner:
         Returns:
             List of Triplet objects.
         """
-        strategy = strategy or self.default_strategy
+        strategy = _resolve_strategy(strategy or self.default_strategy)
         repo_path = str(repo_path)
         repo_name = Path(repo_path).name
 
@@ -181,25 +205,35 @@ class TripletMiner:
         if not commits:
             return []
 
-        # Collect positive texts (diffs) and candidate negatives
-        positive_texts = {}  # sha → diff
-        all_candidates = []  # list of (text, source_repo)
-        candidate_sources = []
+        # Collect commit diffs keyed by sha for fast exclusion
+        commit_diffs: Dict[str, str] = {}
+        for c in commits:
+            if c["diff"]:
+                commit_diffs[c["sha"]] = c["diff"]
+
+        # Build candidate pool: (text, sha_or_none, source)
+        all_candidates: List[str] = []
+        candidate_shas: List[Optional[str]] = []  # sha for commit diffs, None for files
+        candidate_sources: List[str] = []
 
         for c in commits:
             if c["diff"]:
-                positive_texts[c["sha"]] = c["diff"]
                 all_candidates.append(c["diff"])
+                candidate_shas.append(c["sha"])
                 candidate_sources.append(repo_name)
 
         # Also add current file contents as candidates
         file_contents = _get_file_contents(repo_path)
         for fc in file_contents:
             all_candidates.append(fc)
+            candidate_shas.append(None)
             candidate_sources.append(repo_name)
 
         if not all_candidates:
             return []
+
+        # Build sha→index set for O(1) exclusion lookups
+        _candidate_sha_set = set(candidate_shas)
 
         # Build triplets
         triplets = []
@@ -217,17 +251,16 @@ class TripletMiner:
             similarity = compute_similarity(anchor, positive)
 
             # Select negatives (exclude this commit's own diff)
+            exclude = {sha}
             neg_candidates = [
-                text for i, text in enumerate(all_candidates)
-                if candidate_sources[i] != repo_name or
-                (i < len(commits) and commits[i]["sha"] != sha) or
-                i >= len(commits)
+                text
+                for text, cand_sha in zip(all_candidates, candidate_shas)
+                if cand_sha not in exclude
             ]
             neg_sources = [
-                src for i, src in enumerate(candidate_sources)
-                if candidate_sources[i] != repo_name or
-                (i < len(commits) and commits[i]["sha"] != sha) or
-                i >= len(commits)
+                src
+                for src, cand_sha in zip(candidate_sources, candidate_shas)
+                if cand_sha not in exclude
             ]
 
             negs = select_negatives(
@@ -281,6 +314,8 @@ class TripletMiner:
         Returns:
             Combined list of triplets from all repos.
         """
+        strategy = _resolve_strategy(strategy or self.default_strategy)
+
         all_triplets = []
 
         for repo_path in repos:

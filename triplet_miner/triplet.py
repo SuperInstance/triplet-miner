@@ -55,35 +55,45 @@ def triplets_from_dicts(dicts: List[Dict[str, Any]]) -> List[Triplet]:
 
 # ─── PyTorch Dataset (optional) ────────────────────────────────────
 
-def _make_pytorch_dataset(triplets: List[Triplet]):
-    """Create a PyTorch Dataset from triplets. Requires torch."""
-    try:
+class TripletDataset:
+    """A PyTorch-style Dataset wrapping a list of :class:`Triplet` objects.
+
+    Requires ``torch`` (install with ``pip install triplet-miner[torch]``).
+    """
+
+    def __init__(self, data: List[Triplet]):
+        try:
+            import torch  # noqa: F401 — verify availability
+            from torch.utils.data import Dataset as _Dataset  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "PyTorch is required for TripletDataset. "
+                "Install with: pip install triplet-miner[torch]"
+            )
+        self.data = data
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __getitem__(self, idx: int):
         import torch
-        from torch.utils.data import Dataset
-    except ImportError:
-        raise ImportError(
-            "PyTorch is required for Dataset conversion. "
-            "Install with: pip install triplet-miner[torch]"
-        )
 
-    class TripletDataset(Dataset):
-        def __init__(self, data: List[Triplet]):
-            self.data = data
+        t = self.data[idx]
+        return {
+            "anchor": t.anchor,
+            "positive": t.positive,
+            "negative": t.negative,
+            "similarity": torch.tensor(t.similarity, dtype=torch.float32),
+            "source": t.source,
+            "metadata": json.dumps(t.metadata),
+        }
 
-        def __len__(self) -> int:
-            return len(self.data)
+    def __repr__(self) -> str:
+        return f"TripletDataset(len={len(self.data)})"
 
-        def __getitem__(self, idx: int):
-            t = self.data[idx]
-            return {
-                "anchor": t.anchor,
-                "positive": t.positive,
-                "negative": t.negative,
-                "similarity": torch.tensor(t.similarity, dtype=torch.float32),
-                "source": t.source,
-                "metadata": json.dumps(t.metadata),
-            }
 
+def _make_pytorch_dataset(triplets: List[Triplet]) -> TripletDataset:
+    """Create a PyTorch Dataset from triplets. Requires torch."""
     return TripletDataset(triplets)
 
 
