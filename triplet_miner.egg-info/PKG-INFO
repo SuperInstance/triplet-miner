@@ -1,0 +1,119 @@
+Metadata-Version: 2.4
+Name: triplet-miner
+Version: 0.1.0
+Summary: Mine (anchor, positive, negative) triplets from git history for contrastive learning
+Author: SuperInstance
+License: MIT
+Keywords: triplet-mining,contrastive-learning,git,embeddings,machine-learning
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: gitpython>=3.1.0
+Provides-Extra: torch
+Requires-Dist: torch; extra == "torch"
+Provides-Extra: numpy
+Requires-Dist: numpy; extra == "numpy"
+Provides-Extra: all
+Requires-Dist: torch; extra == "all"
+Requires-Dist: numpy; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: torch; extra == "dev"
+Requires-Dist: numpy; extra == "dev"
+
+# triplet-miner
+
+**Mine (anchor, positive, negative) triplets from git history for contrastive learning.**
+
+Git commits are natural triplet sources:
+- **Anchor** → commit message (the intent)
+- **Positive** → the code that was actually changed (relevant to the intent)
+- **Negative** → unrelated code from other commits, files, or repos
+
+This is useful for training embedding models, retrieval systems, and any contrastive learning pipeline.
+
+## Install
+
+```bash
+pip install triplet-miner
+```
+
+With optional dependencies:
+```bash
+pip install triplet-miner[all]  # torch + numpy
+```
+
+## Quick Start
+
+```python
+from triplet_miner import TripletMiner, MiningStrategy
+
+miner = TripletMiner()
+
+# Mine from local git repos
+triplets = miner.mine_from_repos(
+    repos=["/path/to/repo1", "/path/to/repo2"],
+    strategy=MiningStrategy.HARD_NEGATIVE,
+    min_quality=0.5,
+)
+
+# Or from a single repo
+triplets = miner.mine_from_repo("/path/to/repo")
+
+# Export
+miner.export(triplets, "triplets.json")
+miner.export(triplets, "triplets.csv")
+
+# Load for training
+dataset = miner.to_dataset(triplets)  # PyTorch Dataset
+```
+
+## Triplet Structure
+
+```python
+@dataclass
+class Triplet:
+    anchor: str      # e.g., commit message or function name
+    positive: str    # e.g., relevant code/doc
+    negative: str    # e.g., unrelated code/doc
+    similarity: float  # anchor-positive similarity score
+    source: str      # repo name
+    metadata: dict   # extra info
+```
+
+## Mining Strategies
+
+| Strategy | Description | When to Use |
+|----------|-------------|-------------|
+| `RANDOM` | Random negative selection | Fast baseline, initial experiments |
+| `HARD_NEGATIVE` | Negatives similar to the anchor but wrong | Best for training robust embeddings |
+| `SEMI_HARD` | Negatives between random and hard | Balanced difficulty for stable training |
+| `DOMAIN_AWARE` | Negatives from different repos/domains | Cross-domain generalization |
+
+## Quality Filters
+
+- **Minimum length**: Skip trivially short anchors/positives
+- **Deduplication**: Remove duplicate or near-duplicate triplets
+- **Language detection**: Filter by programming language
+- **Quality scoring**: Automated quality assessment
+
+## Export Formats
+
+- **JSON**: `miner.export(triplets, "out.json")`
+- **CSV**: `miner.export(triplets, "out.csv")`
+- **PyTorch Dataset**: `miner.to_dataset(triplets)`
+- **HuggingFace Dataset**: `miner.to_hf_dataset(triplets)`
+
+## Works with Any Git Repo
+
+Not just SuperInstance — any git repository works. Point it at your codebase and get training data.
+
+## License
+
+MIT
