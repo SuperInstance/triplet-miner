@@ -1,0 +1,29 @@
+{
+  "name": "@superinstance/triplet-miner",
+  "version": "0.1.0",
+  "description": "Mine (anchor, positive, negative) triplets from git history for contrastive learning",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "triplet",
+    "contrastive-learning",
+    "git",
+    "mining",
+    "embeddings"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SuperInstance/triplet-miner"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
+  }
+}

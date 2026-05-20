@@ -195,7 +195,7 @@ class TripletMiner:
         """
         strategy = _resolve_strategy(strategy or self.default_strategy)
         repo_path = str(repo_path)
-        repo_name = Path(repo_path).name
+        repo_name = Path(repo_path).resolve().name
 
         # Parse commits
         try:

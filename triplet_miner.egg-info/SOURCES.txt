@@ -9,6 +9,7 @@ triplet_miner/__init__.py
 triplet_miner/exporters.py
 triplet_miner/filters.py
 triplet_miner/git_miner.py
+triplet_miner/py.typed
 triplet_miner/strategies.py
 triplet_miner/triplet.py
 triplet_miner.egg-info/PKG-INFO
