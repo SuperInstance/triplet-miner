@@ -8,11 +8,11 @@ Keywords: triplet-mining,contrastive-learning,git,embeddings,machine-learning
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: Science/Research
-Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
+License-File: LICENSE
 Provides-Extra: torch
 Requires-Dist: torch; extra == "torch"
 Provides-Extra: numpy
@@ -25,6 +25,7 @@ Requires-Dist: pytest>=7.0; extra == "dev"
 Requires-Dist: pytest-cov; extra == "dev"
 Requires-Dist: torch; extra == "dev"
 Requires-Dist: numpy; extra == "dev"
+Dynamic: license-file
 
 # triplet-miner
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import threading
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -169,6 +170,7 @@ class TripletMiner:
         self.default_strategy = _resolve_strategy(default_strategy)
         self.max_commits = max_commits
         self.negatives_per_anchor = negatives_per_anchor
+        self._lock = threading.Lock()
 
     def __repr__(self) -> str:
         return (
