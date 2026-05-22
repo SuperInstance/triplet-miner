@@ -29,6 +29,11 @@ Dynamic: license-file
 
 # triplet-miner
 
+[![PyPI version](https://img.shields.io/pypi/v/triplet-miner.svg)](https://pypi.org/project/triplet-miner/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
+
 **Mine (anchor, positive, negative) triplets from git history for contrastive learning.**
 
 Git commits are natural triplet sources:
